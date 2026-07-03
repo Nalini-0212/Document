@@ -1,0 +1,54 @@
+Application Deployment
+(Deploy the given react application to a production ready state)
+
+Application:
+
+Clone the below mentioned repo and deploy the application(Run the application in port 80 [HTTP])
+
+Repo URL: https://github.com/sriram-R-krishnan/devops-build
+
+Docker:
+ - Dockerize the application by creating a Dockerfile
+ - Create a docker-compose file to use the above image
+
+Bash Scripting:
+write 2 scripts
+ - build.sh - for building the docker images
+ - deploy.sh - for deploying the image to server
+
+Version Control:
+- push to GitHub to dev branch (use dockerignore and gitignore files)
+- Note: Use only CLI for related git commands
+
+DockerHub:
+- Create 2 repos "dev" and "prod" to push images
+  "prod" repo must be private and "dev" repo can be public
+
+Jenkins:
+- Install and configure Jenkins build step as per needs to build,push and deploy the application.
+- connect Jenkins to the GitHub repo with auto build trigger from both dev and master branch.
+- If code pushed to dev branch , docker image must build and pushed to dev repo in docker hub.
+- If dev merged to master , then docker image must be pushed to prod repo in docker hub
+
+AWS:
+Lanch t2.micro instance and deploy the create application.
+Configure SG as below:
+- whoever has ip address can access the application.
+- login to server can should be made only from your ip
+
+Monitoring:
+
+Setup  a monitoring system to check the health status of application (open source).
+sending notification only if the application goes down is highly appreciable.
+
+Submission:
+
+- GitHub repo URL,deployed site URL, docker images name must be added in the submission.
+
+- Upload the screenshoots of below mentioned in GitHub repo:
+
+   - Jenkins (login page, configuration setting, excecute step commands)
+   - AWS (EC2- Console, SG config)
+   - docker hub repo with image tags
+   - Deployed site page 
+   - Monitoring healthcheck status

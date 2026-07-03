@@ -1,0 +1,230 @@
+Prometheus will scrape targets every 15 seconds.
+This is the default interval unless overridden for a specific job.
+
+
+Loads alerting rules from alert_rules.yml.
+Those rules can define alerts such as:
+
+Website down
+High response time
+SSL certificate expiry
+
+
+ alert: WebsiteDown
+  expr: probe_success == 0
+  for: 1m
+Prometheus sends firing alerts to Alertmanager.
+Alertmanager is running on:
+
+localhost:9093
+Alertmanager can then send notifications through:
+
+Email
+Slack
+Teams
+PagerDuty
+
+
+
+Creates a monitoring job named:
+react-app
+
+metrics_path: /probe
+Normally Prometheus scrapes:
+/metrics
+But Blackbox Exporter exposes:
+/probe
+
+
+http://localhost:9115/probe?target=http://APP_SERVER_IP&module=http_2xx
+6. Probe Module
+
+params:
+  module: [http_2xx]
+Tells Blackbox Exporter to use the:
+http_2xx
+module.
+This module checks:
+
+HTTP connectivity
+Response status code
+DNS resolution
+SSL information
+Response time
+
+
+Success occurs when HTTP status is:
+200–299
+
+7. Target Definition
+
+
+static_configs:
+  - targets:
+      - http://APP_SERVER_IP
+This is the actual application being monitored.
+
+
+targets:
+  - http://192.168.1.50
+
+targets:
+  - https://my-react-app.com
+
+Blackbox Exporter will send an HTTP request to this URL.
+
+8. Relabeling Explained
+
+initially
+
+source_labels: [__address__]
+  target_label: __param_target
+
+__address__ = http://APP_SERVER_IP
+
+It becomes:
+
+__param_target = http://APP_SERVER_IP
+
+This creates the target query parameter for Blackbox Exporter.
+
+Result:
+
+
+
+/probe?target=http://APP_SERVER_IP
+
+
+Step 2
+
+- source_labels: [__param_target]
+  target_label: instance
+
+Sets the Prometheus instance label.
+Result:
+
+
+ v            m,   kmkm="http://APP_SERVER_IP"
+
+This makes dashboards and alerts show the actual monitored application instead of the exporter address.
+
+Step 3
+
+
+- target_label: __address__
+  replacement: localhost:9115
+
+Changes the scrape target from:
+
+http://APP_SERVER_IP
+
+to
+
+localhost:9115
+
+which is where the Blackbox Exporter is running.
+So Prometheus actually scrapes:
+
+localhost:9115/probe
+
+and Blackbox Exporter probes:
+
+http://APP_SERVER_IP
+
+
+Prometheus
+    |
+    | Scrape
+    v
+Blackbox Exporter (localhost:9115)
+    |
+    | HTTP Probe
+    v
+React Application (APP_SERVER_IP)
+
+
+Prometheus
+  -> http://localhost:9115/probe?target=http://10.0.0.5&module=http_2xx
+
+Blackbox Exporter
+  -> http://10.0.0.5
+
+React App
+  -> returns HTTP 200
+
+Blackbox Exporter
+  -> probe_success=1
+
+Prometheus
+  -> stores metrics
+`
+
+
+global:
+  scrape_interval: 15s
+
+rule_files:
+  - alert_rules.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - localhost:9093
+
+scrape_configs:
+  - job_name: react-app
+
+    metrics_path: /probe
+
+    params:
+      module: [http_2xx]
+
+    static_configs:
+      - targets:
+          - http://APP_SERVER_IP
+
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+
+      - source_labels: [__param_target]
+        target_label: instance
+
+      - target_label: __address__
+        replacement: localhost:9115
+
+Useful Metrics Generated
+Blackbox Exporter will produce metrics such as:
+
+probe_success
+
+1 = Application reachable
+0 = Application unreachable
+
+
+probe_duration_seconds
+
+Total probe time
+
+
+probe_http_status_code
+
+200
+404
+500
+
+probe_ssl_earliest_cert_expiry
+
+SSL certificate expiration timestamp
+
+
+
+Purpose of This Configuration
+This setup is ideal when your React application does not expose Prometheus metrics. Instead of scraping application metrics directly, Prometheus checks:
+✅ Website availability
+✅ HTTP status codes
+✅ Response latency
+✅ SSL certificate health
+✅ Endpoint reachability
+using Blackbox Exporter running on localhost:9115.
